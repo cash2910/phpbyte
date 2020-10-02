@@ -1,0 +1,159 @@
+<?php
+/**
+ * @author Sukura
+ */
+ 
+class Bytes{
+
+    private $buffer = null;
+    private $readIdx= 0;
+    private $maxLength = 0;
+
+    const BIG_ENDIAN  = 1 ;
+    const LITTLE_ENDIAN = 2;
+    const WAITING_CHECK = -1;
+    private static $result = -1;
+
+    const INT_LEN = 4;
+    const SHORT_LEN= 2;
+    const FLOAT_LEN = 4;
+    const DOUBLE_LEN = 8;
+
+    public static function getEndian(){
+
+        if( static::$result == static::WAITING_CHECK ){
+            static::$result = self::LITTLE_ENDIAN;
+            if(  pack('L', 1) === pack('N', 1) ){
+                static::$result == static::BIG_ENDIAN;
+            }
+        }
+        return static::$result;
+    }
+
+
+    public static function initBytes( $buffers = null ){
+        return new static( $buffers );
+    }
+
+    private function __construct( $buff = null ){
+        $this->buffer = $buff;
+        $this->maxLength = strlen($buff);
+    }
+
+    public function readShort(){
+        $short = 0;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $short = unpack( 's' ,  substr( $this->buffer, $this->readIdx, static::SHORT_LEN )  );
+        }else{
+            $short = unpack( 's', strrev( substr( $this->buffer, $this->readIdx, static::SHORT_LEN ) ));
+        }
+        $this->updateReadIdx(static::SHORT_LEN);
+        return $short;
+    }
+
+    public function readInt(){
+        $int = 0;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $int = unpack( 'i' ,  substr( $this->buffer, $this->readIdx, static::INT_LEN )  );
+        }else{
+            $int = unpack( 'i', strrev( substr( $this->buffer, $this->readIdx, static::INT_LEN ) ));
+        }
+        $this->updateReadIdx(static::INT_LEN);
+        return $int;
+    }
+
+    public function readString( $length = 100 ){
+        $str = "";
+        $len = min( $length, $this->maxLength - $this->readIdx );
+        for( $i = $this->readIdx; $i < $this->readIdx+$len; $i++ ){
+            $str .=  $this->buffer[$i];
+        }
+        $this->updateReadIdx($len);
+        return $str;
+    }
+
+
+    public function readFloat(){
+
+        $float = 0;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $float = unpack( 'f' ,  substr( $this->buffer, $this->readIdx, static::FLOAT_LEN )  );
+        }else{
+            $float = unpack( 'f', strrev( substr( $this->buffer, $this->readIdx, static::FLOAT_LEN ) ));
+        }
+        $this->updateReadIdx(static::FLOAT_LEN);
+        return $float;
+
+    }
+
+    public function readDouble(){
+        $double = 0;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $double = unpack( 'd' ,  substr( $this->buffer, $this->readIdx, static::DOUBLE_LEN )  );
+        }else{
+            $double = unpack( 'd', strrev( substr( $this->buffer, $this->readIdx, static::DOUBLE_LEN ) ));
+        }
+        $this->updateReadIdx(static::DOUBLE_LEN);
+        return $double;
+    }
+
+    public function writeInt( $intVal ){
+        $byte = null;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $byte = pack('i',  $intVal);
+        }else{
+            $byte = strrev( pack( 'i' , $intVal ) );
+        }
+        $this->mergeByte($byte);
+        return $this;
+    }
+
+
+    public function writeFloat( $floatVal ){
+        $byte = null;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $byte = pack('f',  $floatVal);
+        }else{
+            $byte = strrev( pack( 'f' , $floatVal ) );
+        }
+        $this->mergeByte($byte);
+        return $this;
+    }
+
+    public function writeString( $strVal ){
+        $byte = null;
+        $len = strlen($strVal);
+        $formate = "a{$len}";
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $byte = pack($formate,  $strVal);
+        }else{
+            $byte = strrev( pack( $formate , $strVal ) );
+        }
+        $this->mergeByte($byte);
+        return $this;
+    }
+
+
+    public function writeDouble( $doubleVal ){
+        $byte = null;
+        if( static::getEndian() == static::BIG_ENDIAN ){
+            $byte = pack('d',  $doubleVal);
+        }else{
+            $byte = strrev( pack( 'd' , $doubleVal ) );
+        }
+        $this->mergeByte($byte);
+        return $this;
+    }
+
+    private function mergeByte( $bytes ){
+        return $this->buffer .= $bytes;
+    }
+
+    private function updateReadIdx( $length ){
+        $this->readIdx += $length;
+    }
+
+}
+
+
+?>
