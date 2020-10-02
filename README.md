@@ -22,7 +22,7 @@ $port = xxxx;
 $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP) or die("Could not create socket.\n");
 $connection = socket_connect($socket, $host, $port) or die("Could not connect server.\n");
 
-$ret = socket_recv($socket, $msg, 30, MSG_PEEK  );
+$ret = socket_recv($socket, $msg, 130, MSG_PEEK  );
 
 
 $bytes = Bytes::initBytes($msg);
